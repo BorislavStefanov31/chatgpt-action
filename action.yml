@@ -1,6 +1,6 @@
 name: 'Chat with GPT'
 description: 'Send a message to GPT using OpenAI API'
-image: 'message-circle'
+icon: 'message-circle'
 inputs:
   openai_api_key:
     description: 'OpenAI API key'
