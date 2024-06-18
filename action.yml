@@ -1,4 +1,4 @@
-name: 'Chat with GPT'
+name: 'ChatGPT text generator'
 description: 'Send a message to GPT using OpenAI API'
 branding:
 icon: "message-circle"
