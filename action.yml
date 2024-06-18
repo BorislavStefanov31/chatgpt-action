@@ -1,0 +1,32 @@
+name: 'Chat with GPT'
+description: 'Send a message to GPT using OpenAI API'
+inputs:
+  openai_api_key:
+    description: 'OpenAI API key'
+    required: true
+    secret: true
+  message:
+    description: 'Message to send to GPT'
+    required: true
+  temperature:
+    description: 'Temperature for the GPT model'
+    required: false
+    default: 0.7
+  model:
+    description: 'GPT model to use'
+    required: false
+    default: 'gpt-4o'
+runs:
+  using: 'composite'
+  steps:
+    - name: Send message to GPT
+      run: |
+        curl -X POST \
+        https://api.openai.com/v1/chat/completions \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer ${{ inputs.openai_api_key }}" \
+        -d '{
+             "model": "${{ inputs.model }}",
+             "messages": [{"role": "user", "content": "${{ inputs.message }}"}],
+             "temperature": ${{ inputs.temperature }}
+           }'
