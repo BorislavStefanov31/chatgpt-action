@@ -48,4 +48,4 @@ jobs:
         model: 'gpt-4o'
 
     - name: Output GPT Response
-      run: echo "GPT Response: ${{ steps.chat.outputs.response_message }}"
+      run: echo "${{ steps.chat.outputs.response_message }}"
