@@ -42,7 +42,7 @@ jobs:
       id: chat
       uses: BorislavStefanov31/chatgpt-action@v1.0.0
       with:
-        openai_api_key: ${{ secrets.OPENAI_KEY }}
+        openai_api_key: ${{ secrets.OPENAI_API_KEY }}
         message: 'Say this is a test!'
         temperature: 0.7
         model: 'gpt-4o'
