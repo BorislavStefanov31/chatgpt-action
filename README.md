@@ -1,6 +1,6 @@
-# Chat with GPT Action
+# Generate text with OpenAI LLMs Action
 
-This action sends a message to GPT using the OpenAI API.
+This action sends a message to llm by your choice using the OpenAI API.
 
 ## Inputs
 
