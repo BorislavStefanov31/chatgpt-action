@@ -20,9 +20,10 @@ runs:
   using: 'composite'
   steps:
     - name: Send message to GPT
+      id: send_message
       shell: bash
       run: |
-        curl -X POST \
+        response=$(curl -s -X POST \
         https://api.openai.com/v1/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer ${{ inputs.openai_api_key }}" \
@@ -30,4 +31,8 @@ runs:
              "model": "${{ inputs.model }}",
              "messages": [{"role": "user", "content": "${{ inputs.message }}"}],
              "temperature": ${{ inputs.temperature }}
-           }'
+           }')
+
+        echo "$response" | jq -r '.choices[0].message.content // .error.message'
+      env:
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
