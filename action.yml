@@ -20,6 +20,7 @@ runs:
   using: 'composite'
   steps:
     - name: Send message to GPT
+      shell: bash
       run: |
         curl -X POST \
         https://api.openai.com/v1/chat/completions \
