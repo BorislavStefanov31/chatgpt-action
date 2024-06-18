@@ -23,9 +23,29 @@ This action sends a message to llm by your choice using the OpenAI API.
 ## Example usage
 
 ```yaml
-uses: your-username/chat-with-gpt-action@v1.0.0
-with:
-  openai_api_key: ${{ secrets.OPENAI_KEY }}
-  message: 'Say this is a test!'
-  temperature: 0.7
-  model: 'gpt-4o'
+name: Chat with Chat-GPT
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  chat:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Use chat-with-gpt-action
+      id: chat
+      uses: BorislavStefanov31/chatgpt-action@v1.0.0
+      with:
+        openai_api_key: ${{ secrets.OPENAI_KEY }}
+        message: 'Say this is a test!'
+        temperature: 0.7
+        model: 'gpt-4o'
+
+    - name: Output GPT Response
+      run: echo "GPT Response: ${{ steps.chat.outputs.response_message }}"
