@@ -1,6 +1,6 @@
 name: Chat with GPT
 
-on: [push]
+on: [workflow_dispatch]
 
 jobs:
   chat:
