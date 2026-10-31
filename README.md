@@ -68,7 +68,7 @@ jobs:
     steps:
     - name: Use chat-with-gpt-action
       id: chat
-      uses: BorislavStefanov31/chatgpt-action@main
+      uses: BorislavStefanov31/chatgpt-action@v2
       with:
         openai_api_key: ${{ secrets.OPENAI_API_KEY }}
         message: 'Say this is a test!'
