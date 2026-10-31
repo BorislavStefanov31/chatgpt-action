@@ -1,41 +1,94 @@
 name: 'ChatGPT text generator'
-description: 'Send a message to GPT using OpenAI API'
+description: 'Send a message to an OpenAI model using the Responses API'
 branding:
-icon: "message-circle"
-color: "gray-dark"
+  icon: "message-circle"
+  color: "gray-dark"
 inputs:
   openai_api_key:
     description: 'OpenAI API key'
     required: true
-    secret: true
   message:
-    description: 'Message to send to GPT'
+    description: 'Message to send to the model'
     required: true
-  temperature:
-    description: 'Temperature for the GPT model'
+  instructions:
+    description: 'Optional system/developer instructions for the model'
     required: false
-    default: 0.7
+    default: ''
   model:
-    description: 'GPT model to use'
+    description: 'OpenAI model to use'
     required: false
-    default: 'gpt-4o'
+    default: 'gpt-6.1-sol'
+  reasoning_effort:
+    description: 'Reasoning effort (none, low, medium, high, xhigh, max). Empty uses the model default'
+    required: false
+    default: ''
+  temperature:
+    description: 'Sampling temperature. Empty omits it, as many reasoning models do not accept it'
+    required: false
+    default: ''
+  max_output_tokens:
+    description: 'Upper bound on generated tokens, including reasoning tokens. Empty uses the model default'
+    required: false
+    default: ''
+outputs:
+  response_message:
+    description: 'Text returned by the model'
+    value: ${{ steps.send_message.outputs.response_message }}
+  response_id:
+    description: 'ID of the OpenAI response'
+    value: ${{ steps.send_message.outputs.response_id }}
 runs:
   using: 'composite'
   steps:
-    - name: Send message to GPT
+    - name: Send message to OpenAI
       id: send_message
       shell: bash
-      run: |
-        response=$(curl -s -X POST \
-        https://api.openai.com/v1/chat/completions \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer ${{ inputs.openai_api_key }}" \
-        -d '{
-             "model": "${{ inputs.model }}",
-             "messages": [{"role": "user", "content": "${{ inputs.message }}"}],
-             "temperature": ${{ inputs.temperature }}
-           }')
-
-        echo "$response" | jq -r '.choices[0].message.content // .error.message'
       env:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        INPUT_MESSAGE: ${{ inputs.message }}
+        INPUT_INSTRUCTIONS: ${{ inputs.instructions }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_REASONING_EFFORT: ${{ inputs.reasoning_effort }}
+        INPUT_TEMPERATURE: ${{ inputs.temperature }}
+        INPUT_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
+      run: |
+        set -euo pipefail
+
+        payload=$(jq -n \
+          --arg model "$INPUT_MODEL" \
+          --arg input "$INPUT_MESSAGE" \
+          --arg instructions "$INPUT_INSTRUCTIONS" \
+          --arg effort "$INPUT_REASONING_EFFORT" \
+          --arg temperature "$INPUT_TEMPERATURE" \
+          --arg max_tokens "$INPUT_MAX_OUTPUT_TOKENS" \
+          '{model: $model, input: $input, store: false}
+           + (if $instructions != "" then {instructions: $instructions} else {} end)
+           + (if $effort != "" then {reasoning: {effort: $effort}} else {} end)
+           + (if $temperature != "" then {temperature: ($temperature | tonumber)} else {} end)
+           + (if $max_tokens != "" then {max_output_tokens: ($max_tokens | tonumber)} else {} end)')
+
+        response=$(curl -sS -X POST https://api.openai.com/v1/responses \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $OPENAI_API_KEY" \
+          -d "$payload")
+
+        error=$(echo "$response" | jq -r '.error.message // empty')
+        if [ -n "$error" ]; then
+          echo "::error::OpenAI API error: $error"
+          exit 1
+        fi
+
+        text=$(echo "$response" | jq -r '[.output[]? | select(.type == "message") | .content[]? | select(.type == "output_text") | .text] | join("")')
+        if [ "$(echo "$response" | jq -r '.status')" = "incomplete" ]; then
+          echo "::warning::Response incomplete: $(echo "$response" | jq -r '.incomplete_details.reason // "unknown"')"
+        fi
+
+        echo "$text"
+
+        delimiter="EOF_$(openssl rand -hex 16)"
+        {
+          echo "response_id=$(echo "$response" | jq -r '.id')"
+          echo "response_message<<$delimiter"
+          echo "$text"
+          echo "$delimiter"
+        } >> "$GITHUB_OUTPUT"
